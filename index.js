@@ -1,5 +1,4 @@
 module.exports = (robot) => {
-  // Your code here
   robot.log('Yay, the app was loaded!')
   robot.log(robot)
 
@@ -45,16 +44,16 @@ async function updateChildBranch (robot, branchName, parentRepo, childRepo) {
   robot.log(`Trying to create a pullRequest on child ${childRepo.owner}:${childRepo.repo}`)
   const result = await github.pullRequests.create(payload)
   const pullRequestId = result.data.number
-  console.log(`Attempting to merge pull request ${pullRequestId} on ${childRepo.owner}/${childRepo.repo}`)
+  robot.log(`Attempting to merge pull request ${pullRequestId} on ${childRepo.owner}/${childRepo.repo}`)
   const mergeResult = await github.pullRequests.merge({
     owner: childRepo.owner,
     repo: childRepo.repo,
     number: pullRequestId,
     merge_method: 'rebase'
   })
-  console.log(mergeResult)
+  robot.log(mergeResult)
   if (mergeResult.data.merged) {
-    console.log('Hooray! The merge worked!')
+    robot.log('Hooray! The merge worked!')
   }
 }
 
