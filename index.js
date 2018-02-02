@@ -60,7 +60,7 @@ class AutoForkSyncRobotHandler {
       owner: childRepo.owner,
       repo: childRepo.repo,
       number: pullRequestId,
-      merge_method: 'rebase'
+      merge_method: 'merge'
     })
     this.robot.log(mergeResult)
     if (mergeResult.data.merged) {
