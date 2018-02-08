@@ -34,27 +34,33 @@ class AutoForkSyncRobotHandler {
     const payload = context.payload
     const forks = await this.getListOfForks(payload.repository, github)
     const branchName = payload.ref.substring(11) // Gets rid of the refs/head/ part
+    const parentHash = payload.head_commit.id
     if (config.branch_blacklist.includes(branchName)) {
       return
     }
     const parentRepo = getRepoDict(payload.repository)
     for (const fork of forks) {
-      await this.updateChildBranch(branchName, parentRepo, fork)
+      await this.updateChildBranch(branchName, parentHash, parentRepo, fork)
     }
   }
 
   async createChildBranch (branchName, parentRepo, childRepo) {
     const github = await this.getClientForRepo(childRepo)
-    // Shoot, we have to use the github api to create a ref.
-    // But we need to figure out what sha to set the ref to
-    // It has to be one that already exists on the child repo,
-    // but also one that merges correctly with the parent branch
-    // This could be challenging
+    // TODO: Create PR from parent to existing branch on child
+    // Create ref with the head sha from that PR
   }
 
-  async updateChildBranch (branchName, parentRepo, childRepo) {
+  async updateChildBranch (branchName, parentSha, parentRepo, childRepo) {
+    // Instead of creating pull requests and merging them, could we create pull requests and then
+    // set the branch to the ref in the PR? Does the sha even exist in the repo at that point?
+    // Answer: yes it does. Sweet
     const github = await this.getClientForRepo(childRepo)
     const pullRequestId = await this.createPullRequest(github, parentRepo, childRepo, branchName)
+    await this.setBranchToRef(github, childRepo, parentSha, branchName)
+    // await this.mergePullRequest(pullRequestId, childRepo, github)
+  }
+
+  async mergePullRequest (pullRequestId, childRepo, github) {
     this.robot.log(`Attempting to merge pull request ${pullRequestId} on ${getRepoString(childRepo)}`)
     const mergeResult = await github.pullRequests.merge({
       owner: childRepo.owner,
@@ -66,6 +72,20 @@ class AutoForkSyncRobotHandler {
     if (mergeResult.data.merged) {
       this.robot.log('Hooray! The merge worked!')
     }
+  }
+
+  async setBranchToRef (github, repo, sha, branchName) {
+    this.robot.log(`Attempting to set branch ${branchName} on ${getRepoString(repo)} to sha ${sha}`)
+    const force = false // This should just fail so that we don't accidentally overwrite work
+    const payload = {
+      owner: repo.owner,
+      repo: repo.repo,
+      ref: `heads/${branchName}`,
+      sha: sha,
+      force: force
+    }
+    const result = await github.gitdata.updateReference(payload)
+    this.robot.log(result)
   }
 
   async createPullRequest (github, parentRepo, childRepo, branchName) {
