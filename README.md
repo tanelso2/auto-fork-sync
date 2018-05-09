@@ -1,6 +1,6 @@
 # auto-fork-sync
 
-> a GitHub App built with [probot](https://github.com/probot/probot) that 
+> a GitHub App built with [probot](https://github.com/probot/probot) that automatically syncs upstream changes to forks.
 
 ## Setup
 
@@ -12,4 +12,3 @@ npm install
 npm start
 ```
 
-See [docs/deploy.md](docs/deploy.md) if you would like to run your own instance of this app.
